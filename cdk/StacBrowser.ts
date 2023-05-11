@@ -1,5 +1,5 @@
 import { Stack, aws_s3 as s3, aws_s3_deployment as s3_deployment, aws_cloudfront as cloudfront, aws_cloudfront_origins as cloudfront_origins, StackProps} from "aws-cdk-lib";
-import { RemovalPolicy } from "aws-cdk-lib";
+import { RemovalPolicy, CfnOutput } from "aws-cdk-lib";
 import { PolicyStatement, ServicePrincipal, Effect } from "aws-cdk-lib/aws-iam";
 
 import { Construct } from "constructs";
@@ -32,6 +32,11 @@ export class StacBrowser extends Stack {
             destinationBucket: bucket,
             sources: [s3_deployment.Source.asset(props.stacBrowserDistPath)]
           });
+
+        new CfnOutput(this, "bucket-name", {
+        exportName: `${Stack.of(this).stackName}-bucket-name`,
+        value: bucket.bucketName,
+        });
 
     }
 }

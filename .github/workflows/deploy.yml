@@ -1,0 +1,77 @@
+name: deploy
+
+permissions:
+  id-token: write  # required for requesting the JWT
+  contents: read  # required for actions/checkout
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_environment:
+        description: 'environment'
+        required: true
+      browser_source_code_URL:
+        description: 'browser source code'
+        required: true
+        default: https://github.com/radiantearth/stac-browser.git
+      browser_version_tag:
+        description: 'browser version tag'
+        required: true
+        default: v3.0.1
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    environment: "${{ github.event.inputs.deployment_environment }}"
+    env:
+      browser_cache_key: ${{ github.event.inputs.browser_source_code_URL }}-${{ github.event.inputs.browser_version_tag }}-${{ vars.STAC_CATALOG_URL }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up node
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16
+
+    - name: Try browser cache restoration
+      id: restore-cached-browser-if-exists
+      uses: actions/cache@v3
+      with:
+        path: stac-browser/dist
+        key: ${{ runner.os }}-${{ env.browser_cache_key }}
+    
+    - name: Build browser
+      if: steps.restore-cached-browser-if-exists.outputs.cache-hit != 'true'
+      run: |
+        git clone ${{ github.event.inputs.browser_source_code_URL }} stac-browser
+        cd stac-browser
+        git checkout tags/${{ github.event.inputs.browser_version_tag }}
+        npm install
+        npm run build -- --catalogUrl=${{ vars.STAC_CATALOG_URL }}
+        cd ..
+
+    - name: Cache browser
+      uses: actions/cache/save@v3
+      if: always()
+      with:
+        path: stac-browser/dist
+        key: ${{ runner.os }}-${{ env.browser_cache_key }} # should be same as above
+
+    - name: Assume Github OIDC role
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-region: us-west-2
+        role-to-assume: arn:aws:iam::916098889494:role/GithubOIDCRole
+        role-session-name: MAAPStacBrowserDeployment
+
+    - name: Install deployment dependencies
+      run: npm install
+
+    - name: Run CDK deploy
+      env:
+        STAGE: ${{ github.event.inputs.deployment_environment }}
+        BROWSER_CLOUDFRONT_DISTRIBUTION_ARN: ${{ vars.BROWSER_CLOUDFRONT_DISTRIBUTION_ARN }}
+        STAC_BROWSER_DIST_PATH: 'stac-browser/dist' 
+      run: |
+        npm install -g aws-cdk
+        cdk deploy --all --require-approval never
