@@ -9,7 +9,6 @@ export class StacBrowser extends Stack {
         super(scope, id);
 
         const bucket = new s3.Bucket(this, `${Stack.of(this).stackName}-static-bucket`, {
-            publicReadAccess: true,
             removalPolicy: RemovalPolicy.DESTROY,
         })
 
