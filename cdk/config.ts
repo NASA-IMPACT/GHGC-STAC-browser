@@ -17,6 +17,6 @@ export class Config {
    * @param serviceId Identifier of service
    * @returns Full id of stack
    */
-  buildStackName = (serviceId: string): string =>
-    `MAAP-STAC-${this.stage}-${serviceId}`;
+  buildStackName = (): string =>
+    `ghgc-stac-browser-${this.stage}`;
 }

@@ -10,13 +10,18 @@ on:
       deployment_environment:
         description: 'environment'
         required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
       browser_source_code_URL:
         description: 'browser source code'
-        required: true
+        required: false
         default: https://github.com/radiantearth/stac-browser.git
       browser_version_tag:
         description: 'browser version tag'
-        required: true
+        required: false
         default: v3.0.1
 jobs:
   build_and_deploy:
@@ -31,7 +36,7 @@ jobs:
     - name: Set up node
       uses: actions/setup-node@v2
       with:
-        node-version: 16
+        node-version: 20
 
     - name: Try browser cache restoration
       id: restore-cached-browser-if-exists
@@ -61,8 +66,8 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-region: us-west-2
-        role-to-assume: arn:aws:iam::916098889494:role/GithubOIDCRole
-        role-session-name: MAAPStacBrowserDeployment
+        role-to-assume: ${{ secrets.DEPLOYMENT_ROLE_ARN }}
+        role-session-name: ghgc-stac-browser-github-actions-deploy
 
     - name: Install deployment dependencies
       run: npm install
@@ -70,8 +75,8 @@ jobs:
     - name: Run CDK deploy
       env:
         STAGE: ${{ github.event.inputs.deployment_environment }}
-        BROWSER_CLOUDFRONT_DISTRIBUTION_ARN: ${{ vars.BROWSER_CLOUDFRONT_DISTRIBUTION_ARN }}
-        STAC_BROWSER_DIST_PATH: 'stac-browser/dist' 
+        BROWSER_CLOUDFRONT_DISTRIBUTION_ARN: ${{ secrets.BROWSER_CLOUDFRONT_DISTRIBUTION_ARN }}
+        STAC_BROWSER_DIST_PATH: 'stac-browser/dist'
       run: |
         npm install -g aws-cdk
         cdk deploy --all --require-approval never
