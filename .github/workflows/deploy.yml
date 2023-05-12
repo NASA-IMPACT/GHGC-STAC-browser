@@ -75,7 +75,6 @@ jobs:
     - name: Run CDK deploy
       env:
         STAGE: ${{ github.event.inputs.deployment_environment }}
-        BROWSER_CLOUDFRONT_DISTRIBUTION_ARN: ${{ secrets.BROWSER_CLOUDFRONT_DISTRIBUTION_ARN }}
         STAC_BROWSER_DIST_PATH: 'stac-browser/dist'
       run: |
         npm install -g aws-cdk

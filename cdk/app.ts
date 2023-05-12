@@ -4,7 +4,7 @@ import * as cdk from "aws-cdk-lib";
 
 import { Config } from "./config";
 import { StacBrowser } from "./StacBrowser";
-const { buildStackName, browserCloudFrontDistrbutionArn, stacBrowserDistPath} =
+const { buildStackName, browserCloudFrontDistrbutionArn, stacBrowserDistPath } =
   new Config();
 
 export const app = new cdk.App({});
