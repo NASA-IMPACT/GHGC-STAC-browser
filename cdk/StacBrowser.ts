@@ -9,8 +9,8 @@ export class StacBrowser extends Stack {
     constructor(scope: Construct, id: string, props: Props) {
         super(scope, id);
 
-        const bucket = new s3.Bucket(this, 'Bucket', {
-            accessControl: s3.BucketAccessControl.PRIVATE,
+        const bucket = new s3.Bucket(this, `${Stack.of(this).stackName}-static-bucket`, {
+            bucketName: Stack.of(this).stackName,
             removalPolicy: RemovalPolicy.DESTROY,
             })
 
